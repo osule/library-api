@@ -8,7 +8,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
-    queryset = User.objects.all().order_by('-date_created')
+    queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
 
 
@@ -22,7 +22,7 @@ class BookViewSet(viewsets.ModelViewSet):
     # TODO: filter out approved book
     # TODO: can only create books if admin
 
-class IssueSerializer(viewsets.IssueSerializer):
+class IssueViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows issues to be requested or approved.
     """
