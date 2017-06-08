@@ -10,5 +10,5 @@ dependencies:
 test:
   override:
     - python library_api/manage.py makemigrations
-    - python troupon/manage.py migrate
-    - python troupon/manage.py test
+    - python library_api/manage.py migrate
+    - python library_api/manage.py test
