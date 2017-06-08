@@ -12,7 +12,8 @@ class UserTestCase(APITestCase):
     def setUp(self):
         User.objects.create(
             email='test.admin@test.com', first_name='Test', 
-            last_name='Admin', password='random', is_admin=True)
+            last_name='Admin', password='random', 
+            username='test.admin', is_staff=True)
         super(UserTestCase, self).setUp()
 
     def test_can_get_users(self):
@@ -20,14 +21,15 @@ class UserTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         data = response.data
-        self.assertEqual(type(data), list)
+        self.assertIsInstance(data, list)
 
 
 class BookTestCase(APITestCase): 
     def setUp(self):
         self.admin = User.objects.create(
             email='test.admin@test.com', first_name='Test', 
-            last_name='Admin', password='random', is_admin=True)
+            last_name='Admin', password='random',
+            username='test.admin', is_staff=True)
         super(BookTestCase, self).setUp()
     
     def test_can_get_books(self):
@@ -35,16 +37,16 @@ class BookTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         data = response.data
-        self.assertEqual(type(data), list)
+        self.assertIsInstance(data, list)
     
     def test_can_create_book(self):
-        self.client.force_authenticate(self.user)
+        self.client.force_authenticate(self.admin)
         response = self.client.post('/api/v1/books/', data={
             'title': 'Book 1',
             'category': 'Arts',
             'isbn': '12344242',
         })
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
         data = response.data
         self.assertEqual(data['title'], 'Book 1')
@@ -57,11 +59,20 @@ class IssuesTestCase(APITestCase):
             'isbn': '12344242',
         })
         self.user = User.objects.create(
-            email='test.user@test.com', first_name='Test', 
-            last_name='User', password='random')
+            email='test.user@test.com', first_name='Test',
+            last_name='User', password='random',
+            username='test.user',
+        )
+        self.user2 = User.objects.create(
+            email='test.user2@test.com', first_name='Test',
+            last_name='User2', password='random',
+            username='test.user2',
+        )
         self.admin = User.objects.create(
             email='test.admin@test.com', first_name='Test', 
-            last_name='Admin', password='random', is_admin=True
+            last_name='Admin', password='random', 
+            username='test.admin', is_staff=True
+        )
         super(IssuesTestCase, self).setUp()
     
     def test_can_get_issues(self):
@@ -70,7 +81,7 @@ class IssuesTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         data = response.data
-        self.assertEqual(type(data), list)
+        self.assertIsInstance(data, list)
     
     def test_can_request_unapproved_book(self):
         self.client.force_authenticate(self.user)
@@ -80,23 +91,28 @@ class IssuesTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
     
     def test_cannot_request_approved_book(self):
-        self.client.force_authenticate(self.user)
 
-        book = self.book
-        book.approved = True
-        book.save()
+        issue = Issue.objects.create(book=self.book, user=self.user, approved=True)
 
-        response = self.client.post('/api/v1/issues/', {
-            'book': self.book.id
-        })
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.client.force_authenticate(self.user2)
+
+        response = self.client.get('/api/v1/books/')
+        data = response.data
+        for book in data:
+            self.assertNotEqual(book['id'], self.book.id)
 
     def test_can_approve_issue(self):
+
+        self.client.force_authenticate(self.admin)
+
         issue = Issue.objects.create(book=self.book, user=self.user)
-        response = self.client.put('/api/v1/issues/{0.id}'.format(issue), {
+
+        response = self.client.put('/api/v1/issues/{0.id}/'.format(issue), {
             'approved': True,
         })
-        self.assertEqual(response.status_code, status.HTTP_201_MODIFIED)
+    
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        response = self.client.get('/api/v1/issues/{0.id}/'.format(issue))
         data = response.data
         self.assertTrue(data['approved'])
