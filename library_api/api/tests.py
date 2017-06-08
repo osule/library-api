@@ -13,7 +13,7 @@ class UserTestCase(APITestCase):
         User.objects.create(
             email='test.admin@test.com', first_name='Test', 
             last_name='Admin', password='random', 
-            username='test.admin', is_superuser=True)
+            username='test.admin', is_staff=True)
         super(UserTestCase, self).setUp()
 
     def test_can_get_users(self):
@@ -29,7 +29,7 @@ class BookTestCase(APITestCase):
         self.admin = User.objects.create(
             email='test.admin@test.com', first_name='Test', 
             last_name='Admin', password='random',
-            username='test.admin', is_superuser=True)
+            username='test.admin', is_staff=True)
         super(BookTestCase, self).setUp()
     
     def test_can_get_books(self):
@@ -63,10 +63,15 @@ class IssuesTestCase(APITestCase):
             last_name='User', password='random',
             username='test.user',
         )
+        self.user2 = User.objects.create(
+            email='test.user2@test.com', first_name='Test',
+            last_name='User2', password='random',
+            username='test.user2',
+        )
         self.admin = User.objects.create(
             email='test.admin@test.com', first_name='Test', 
             last_name='Admin', password='random', 
-            username='test.admin', is_superuser=True
+            username='test.admin', is_staff=True
         )
         super(IssuesTestCase, self).setUp()
     
@@ -86,24 +91,25 @@ class IssuesTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
     
     def test_cannot_request_approved_book(self):
-        self.client.force_authenticate(self.user)
 
-        book = self.book
-        book.approved = True
-        book.save()
+        issue = Issue.objects.create(book=self.book, user=self.user, approved=True)
 
-        response = self.client.post('/api/v1/issues/', {
-            'book': self.book.id
-        })
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.client.force_authenticate(self.user2)
+
+        response = self.client.get('/api/v1/books/')
+        data = response.data
+        for book in data:
+            self.assertNotEqual(book['id'], self.book.id)
 
     def test_can_approve_issue(self):
+
+        self.client.force_authenticate(self.admin)
+
         issue = Issue.objects.create(book=self.book, user=self.user)
 
         response = self.client.put('/api/v1/issues/{0.id}/'.format(issue), {
             'approved': True,
         })
-        
     
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
