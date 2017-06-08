@@ -99,11 +99,14 @@ class IssuesTestCase(APITestCase):
 
     def test_can_approve_issue(self):
         issue = Issue.objects.create(book=self.book, user=self.user)
-        response = self.client.put('/api/v1/issues/{0.id}'.format(issue), {
+
+        response = self.client.put('/api/v1/issues/{0.id}/'.format(issue), {
             'approved': True,
         })
+        
     
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        response = self.client.get('/api/v1/issues/{0.id}/'.format(issue))
         data = response.data
         self.assertTrue(data['approved'])
