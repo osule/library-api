@@ -21,7 +21,7 @@ class UserTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         data = response.data
-        self.assertEqual(type(data), list)
+        self.assertIsInstance(data, list)
 
 
 class BookTestCase(APITestCase): 
@@ -37,7 +37,7 @@ class BookTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         data = response.data
-        self.assertEqual(type(data), list)
+        self.assertIsInstance(data, list)
     
     def test_can_create_book(self):
         self.client.force_authenticate(self.admin)
@@ -46,7 +46,7 @@ class BookTestCase(APITestCase):
             'category': 'Arts',
             'isbn': '12344242',
         })
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
         data = response.data
         self.assertEqual(data['title'], 'Book 1')
@@ -76,7 +76,7 @@ class IssuesTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         data = response.data
-        self.assertEqual(type(data), list)
+        self.assertIsInstance(data, list)
     
     def test_can_request_unapproved_book(self):
         self.client.force_authenticate(self.user)
