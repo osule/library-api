@@ -12,12 +12,12 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 class BookSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Book
-        fields = ('title', 'isbn', 'category')
+        fields = ('id', 'title', 'isbn', 'category')
 
 
 class IssueSerializer(serializers.HyperlinkedModelSerializer):
-    book = serializers.PrimaryKeyRelatedField(read_only=True)
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = Issue
